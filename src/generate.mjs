@@ -43,10 +43,9 @@ async function fetchApodRange(startIso, endIso){
   return Array.isArray(data) ? data : [data];
 }
 
-/* ---------- New: robust video thumbnail fallback ---------- */
+/* Video thumbnail helpers */
 function getYouTubeId(u) {
   if (!u) return "";
-  // watch?v=, youtu.be/, /embed/, /shorts/
   const m =
     u.match(/[?&]v=([^&]+)/) ||
     u.match(/youtu\.be\/([^?&/]+)/) ||
@@ -62,27 +61,23 @@ async function resolveVideoThumb(u) {
   if (!u) return "";
   try {
     if (/youtu\.?be/i.test(u)) {
-      // YouTube oEmbed (most reliable)
       const r = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(u)}&format=json`);
       if (r.ok) {
         const j = await r.json();
         if (j && j.thumbnail_url) return j.thumbnail_url;
       }
-      // Fallback to static thumbnail
       const yt = youTubeThumb(u);
       if (yt) return yt;
     } else if (/vimeo\.com/i.test(u)) {
-      // Vimeo oEmbed
       const r = await fetch(`https://vimeo.com/api/oembed.json?url=${encodeURIComponent(u)}`);
       if (r.ok) {
         const j = await r.json();
         if (j && j.thumbnail_url) return j.thumbnail_url;
       }
     }
-  } catch { /* ignore and fall through */ }
+  } catch { /* ignore */ }
   return "";
 }
-/* --------------------------------------------------------- */
 
 function pageTemplate({title, date, mediaHtml, explanation, urlPath}){
   const pageUrl = site.url + urlPath;
@@ -135,7 +130,9 @@ function pageTemplate({title, date, mediaHtml, explanation, urlPath}){
 
 function indexTemplate(items){
   const cards = items.map(it => {
-    const thumb = it.media_type === "video" ? (it.thumbnail_url||"") : (it.url||"");
+    const thumb = it.media_type === "video"
+      ? (it.thumbnail_url || youTubeThumb(it.url) || `${site.url}/video-placeholder.svg`)
+      : (it.url || "");
     const p = `/apod/${it.date.replace(/-/g,"/")}.html`;
     return `<article class="card">
       <a href="${site.url}${p}"><img loading="lazy" src="${esc(thumb)}" alt="${esc(it.title)}" /></a>
@@ -227,12 +224,10 @@ ${xml}
   }
   apods = (apods||[]).filter(x => x && x.date && (x.url || x.thumbnail_url));
 
-  // New: fill in missing video thumbnails (YouTube/Vimeo)
+  // Fill in missing video thumbnails
   for (const it of apods) {
     if (it.media_type === "video" && !it.thumbnail_url) {
-      it.thumbnail_url = await resolveVideoThumb(it.url || "");
-      // As a last resort for YouTube, synthesize from ID
-      if (!it.thumbnail_url) it.thumbnail_url = youTubeThumb(it.url || "");
+      it.thumbnail_url = await resolveVideoThumb(it.url || "") || youTubeThumb(it.url || "");
     }
   }
 
@@ -249,7 +244,7 @@ ${xml}
     } else if (it.media_type === "video") {
       const src = it.url || "";
       if (/youtube\.com|youtu\.be/.test(src)) {
-        let id = getYouTubeId(src);
+        const id = getYouTubeId(src);
         const embed = id ? `https://www.youtube.com/embed/${id}` : src;
         mediaHtml = `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;border:1px solid rgba(255,255,255,.08)"><iframe src="${esc(embed)}" frameborder="0" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%"></iframe></div>`;
       } else {
