@@ -1,0 +1,9 @@
+{
+  "siteTitle": "NightSky Snaps — APOD Companion",
+  "siteDescription": "Daily Astronomy Picture of the Day with context, archive, and gear recommendations.",
+  "siteUrl": "https://ej-rivers.github.io/nightsky-snaps",
+  "nasaApiKey": "DEMO_KEY",
+  "affiliate": {
+    "amazonTag": "yourtag-20"
+  }
+}
