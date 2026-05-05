@@ -5,7 +5,7 @@ on:
     - cron: "15 6 * * *"  # daily at 06:15 UTC
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ master, main ]
 
 permissions:
   contents: read
