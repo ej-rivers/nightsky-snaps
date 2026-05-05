@@ -26,7 +26,6 @@ function withAmazonTag(url, tag) {
   if (url.includes("tag=")) return url.replace(/tag=[^&]+/, "tag=" + tag);
   return url + (url.includes("?") ? "&" : "?") + "tag=" + tag;
 }
-
 function gearListHtml() {
   const items = (affiliateCfg.products||[]).map(p => {
     let url = p.url || "";
@@ -43,6 +42,47 @@ async function fetchApodRange(startIso, endIso){
   const data = await res.json();
   return Array.isArray(data) ? data : [data];
 }
+
+/* ---------- New: robust video thumbnail fallback ---------- */
+function getYouTubeId(u) {
+  if (!u) return "";
+  // watch?v=, youtu.be/, /embed/, /shorts/
+  const m =
+    u.match(/[?&]v=([^&]+)/) ||
+    u.match(/youtu\.be\/([^?&/]+)/) ||
+    u.match(/youtube\.com\/embed\/([^?&/]+)/) ||
+    u.match(/youtube\.com\/shorts\/([^?&/]+)/);
+  return m ? m[1] : "";
+}
+function youTubeThumb(u) {
+  const id = getYouTubeId(u);
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : "";
+}
+async function resolveVideoThumb(u) {
+  if (!u) return "";
+  try {
+    if (/youtu\.?be/i.test(u)) {
+      // YouTube oEmbed (most reliable)
+      const r = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(u)}&format=json`);
+      if (r.ok) {
+        const j = await r.json();
+        if (j && j.thumbnail_url) return j.thumbnail_url;
+      }
+      // Fallback to static thumbnail
+      const yt = youTubeThumb(u);
+      if (yt) return yt;
+    } else if (/vimeo\.com/i.test(u)) {
+      // Vimeo oEmbed
+      const r = await fetch(`https://vimeo.com/api/oembed.json?url=${encodeURIComponent(u)}`);
+      if (r.ok) {
+        const j = await r.json();
+        if (j && j.thumbnail_url) return j.thumbnail_url;
+      }
+    }
+  } catch { /* ignore and fall through */ }
+  return "";
+}
+/* --------------------------------------------------------- */
 
 function pageTemplate({title, date, mediaHtml, explanation, urlPath}){
   const pageUrl = site.url + urlPath;
@@ -186,6 +226,16 @@ ${xml}
     console.error("APOD fetch error:", e.message || e);
   }
   apods = (apods||[]).filter(x => x && x.date && (x.url || x.thumbnail_url));
+
+  // New: fill in missing video thumbnails (YouTube/Vimeo)
+  for (const it of apods) {
+    if (it.media_type === "video" && !it.thumbnail_url) {
+      it.thumbnail_url = await resolveVideoThumb(it.url || "");
+      // As a last resort for YouTube, synthesize from ID
+      if (!it.thumbnail_url) it.thumbnail_url = youTubeThumb(it.url || "");
+    }
+  }
+
   apods.sort((a,b)=> (a.date < b.date ? 1 : -1));
 
   // Per-day pages
@@ -199,9 +249,7 @@ ${xml}
     } else if (it.media_type === "video") {
       const src = it.url || "";
       if (/youtube\.com|youtu\.be/.test(src)) {
-        let id = "";
-        const m = src.match(/[?&]v=([^&]+)/) || src.match(/youtu\.be\/([^?&]+)/);
-        if (m) id = m[1];
+        let id = getYouTubeId(src);
         const embed = id ? `https://www.youtube.com/embed/${id}` : src;
         mediaHtml = `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;border:1px solid rgba(255,255,255,.08)"><iframe src="${esc(embed)}" frameborder="0" allowfullscreen style="position:absolute;top:0;left:0;width:100%;height:100%"></iframe></div>`;
       } else {
