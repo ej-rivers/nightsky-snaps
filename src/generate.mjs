@@ -103,7 +103,11 @@ function pageTemplate({title, date, mediaHtml, explanation, urlPath}){
       <div class="brand"><a href="${site.url}/">NightSky Snaps</a></div>
       <div class="desc">APOD with context, archive, and gear picks</div>
     </div>
-    <nav class="small"><a href="${site.url}/feed.xml">RSS</a></nav>
+    <nav class="small">
+  <a href="${site.url}/feed.xml">RSS</a> ·
+  <a href="${site.url}/store.html">Store</a> ·
+  <a href="${site.url}/donate.html">Donate</a>
+</nav>
   </header>
 
   <main class="page">
@@ -164,7 +168,11 @@ function indexTemplate(items){
       <div class="brand"><a href="${site.url}/">NightSky Snaps</a></div>
       <div class="desc">APOD with context, archive, and gear picks</div>
     </div>
-    <nav class="small"><a href="${site.url}/feed.xml">RSS</a></nav>
+    <nav class="small">
+  <a href="${site.url}/feed.xml">RSS</a> ·
+  <a href="${site.url}/store.html">Store</a> ·
+  <a href="${site.url}/donate.html">Donate</a>
+</nav>
   </header>
   <main class="container">
     <div class="grid">${cards}</div>
