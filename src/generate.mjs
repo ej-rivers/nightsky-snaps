@@ -89,6 +89,7 @@ function pageTemplate({title, date, mediaHtml, explanation, urlPath}){
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${esc(title)} — NightSky Snaps</title>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5543462517311618" crossorigin="anonymous"></script>
   <meta name="description" content="${esc(desc)}" />
   <link rel="canonical" href="${esc(pageUrl)}" />
   <meta property="og:type" content="article" />
@@ -154,6 +155,7 @@ function indexTemplate(items){
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>${esc(site.title)}</title>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5543462517311618" crossorigin="anonymous"></script>
   <meta name="description" content="${esc(desc)}" />
   <link rel="canonical" href="${esc(site.url)}/" />
   <meta property="og:type" content="website" />
