@@ -127,7 +127,7 @@ function pageTemplate({title, date, mediaHtml, explanation, urlPath}){
     <div style="margin-top:18px" class="note small">Source: <a href="https://apod.nasa.gov/">NASA APOD</a>. Using NASA API with attribution. Check individual media licensing on APOD.</div>
   </main>
 
-  <footer class="footer small">© ${new Date().getFullYear()} NightSky Snaps · <a href="${site.url}/sitemap.xml">Sitemap</a></footer>
+  <footer class="footer small">© ${new Date().getFullYear()} NightSky Snaps · <a href="${site.url}/about.html">About</a> · <a href="${site.url}/privacy.html">Privacy</a> · <a href="${site.url}/sitemap.xml">Sitemap</a></footer>
 </body>
 </html>`;
 }
@@ -177,7 +177,7 @@ function indexTemplate(items){
   <main class="container">
     <div class="grid">${cards}</div>
   </main>
-  <footer class="footer small">© ${new Date().getFullYear()} NightSky Snaps · <a href="${site.url}/sitemap.xml">Sitemap</a></footer>
+  <footer class="footer small">© ${new Date().getFullYear()} NightSky Snaps · <a href="${site.url}/about.html">About</a> · <a href="${site.url}/privacy.html">Privacy</a> · <a href="${site.url}/sitemap.xml">Sitemap</a></footer>
 </body>
 </html>`;
 }
