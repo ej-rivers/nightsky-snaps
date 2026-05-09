@@ -105,7 +105,6 @@ function pageTemplate({title, date, mediaHtml, explanation, urlPath}){
       <div class="desc">APOD with context, archive, and gear picks</div>
     </div>
     <nav class="small">
-  <a href="${site.url}/feed.xml">RSS</a> ·
   <a href="${site.url}/store.html">Store</a> ·
   <a href="${site.url}/donate.html">Donate</a>
 </nav>
@@ -171,7 +170,6 @@ function indexTemplate(items){
       <div class="desc">APOD with context, archive, and gear picks</div>
     </div>
     <nav class="small">
-  <a href="${site.url}/feed.xml">RSS</a> ·
   <a href="${site.url}/store.html">Store</a> ·
   <a href="${site.url}/donate.html">Donate</a>
 </nav>
