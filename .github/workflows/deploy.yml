@@ -2,7 +2,11 @@ name: Build and Deploy APOD Site
 
 on:
   schedule:
-    - cron: "15 6 * * *"  # daily at 06:15 UTC
+    # 13:00 UTC = 09:00 ET (DST) / 08:00 ET (standard).
+    # NASA APOD is typically live by ~05:00 ET; this leaves a comfortable margin
+    # so today's entry is in the 14-day fetch window. Was 06:15 UTC, which was
+    # too early and silently dropped today's page from generate.mjs output.
+    - cron: "0 13 * * *"
   workflow_dispatch:
   push:
     branches: [ master, main ]
@@ -32,8 +36,16 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Build site
+        # No `|| true` on npm ci — if dependencies can't install, the build
+        # should fail loudly. generate.mjs itself also exits non-zero when
+        # today's APOD entry is missing, so a stale deploy can't masquerade
+        # as a successful run.
         run: |
-          npm ci --prefer-offline --no-audit --no-fund || true
+          if [ -f package-lock.json ]; then
+            npm ci --prefer-offline --no-audit --no-fund
+          else
+            npm install --no-audit --no-fund
+          fi
           npm run build
 
       - name: Upload artifact

@@ -224,6 +224,7 @@ ${xml}
   // Fetch last 14 days
   const now = new Date();
   const start = new Date(now.getTime() - 13*24*3600*1000);
+  const todayIso = iso(now);
   let apods = [];
   try {
     apods = await fetchApodRange(iso(start), iso(now));
@@ -231,6 +232,21 @@ ${xml}
     console.error("APOD fetch error:", e.message || e);
   }
   apods = (apods||[]).filter(x => x && x.date && (x.url || x.thumbnail_url));
+
+  // Fail loudly if today's APOD wasn't included. This was a silent failure mode
+  // before: when the workflow ran too early, NASA hadn't posted yet, today's
+  // page never got generated, and the deploy still reported "success" because
+  // GitHub Pages happily redeployed the previous (stale) output.
+  //
+  // Opt out with ALLOW_MISSING_TODAY=1 (e.g. manual rebuilds where you don't
+  // care about today's page).
+  const hasToday = apods.some(x => x.date === todayIso);
+  if (!hasToday && process.env.ALLOW_MISSING_TODAY !== "1") {
+    console.error(`generate.mjs: today's APOD (${todayIso}) is missing from the fetch.`);
+    console.error("  Most likely cause: workflow ran before NASA published today's APOD.");
+    console.error("  Re-run the workflow later, or set ALLOW_MISSING_TODAY=1 to deploy anyway.");
+    process.exit(1);
+  }
 
   // Fill in missing video thumbnails
   for (const it of apods) {
