@@ -2,14 +2,16 @@ name: Build and Deploy APOD Site
 
 on:
   schedule:
-    # 11:00 UTC = 07:00 ET (DST) / 06:00 ET (standard).
+    # 10:00 UTC = 06:00 ET (DST) / 05:00 ET (standard).
+    # We aim early because GitHub Actions schedules drift by 1-3h under load.
+    # We also self-trigger from the local machine at ~07:00 ET as a safety net
+    # (see cron "NightSky Snaps - site build trigger 07:00am"), so by the time
+    # the FB primary cron fires at 08:30 ET the site is reliably up to date.
+    #
     # Constraints:
     #   - Must be AFTER NASA APOD publishes (~05:00 ET, occasionally slips).
-    #   - Must be BEFORE the consumer FB cron at 08:30 ET that fetches this site.
-    # This window gives ~2h after APOD publish and ~90min before the FB cron,
-    # which works in both DST and standard time. (Previous 06:15 UTC was too
-    # early; 13:00 UTC was after the FB primary cron during DST.)
-    - cron: "0 11 * * *"
+    #   - Should land before the FB cron at 08:30 ET that fetches this site.
+    - cron: "0 10 * * *"
   workflow_dispatch:
   push:
     branches: [ master, main ]
@@ -39,7 +41,7 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Build site
-        # No `|| true` on npm ci — if dependencies can't install, the build
+        # No `|| true` on npm ci - if dependencies can't install, the build
         # should fail loudly. generate.mjs itself also exits non-zero when
         # today's APOD entry is missing, so a stale deploy can't masquerade
         # as a successful run.
