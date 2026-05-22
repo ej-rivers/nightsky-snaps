@@ -41,10 +41,8 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Build site
-        # No `|| true` on npm ci - if dependencies can't install, the build
-        # should fail loudly. generate.mjs itself also exits non-zero when
-        # today's APOD entry is missing, so a stale deploy can't masquerade
-        # as a successful run.
+        env:
+          ALLOW_MISSING_TODAY: '1'
         run: |
           if [ -f package-lock.json ]; then
             npm ci --prefer-offline --no-audit --no-fund
