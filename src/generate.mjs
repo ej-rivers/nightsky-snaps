@@ -37,10 +37,24 @@ function gearListHtml() {
 
 async function fetchApodRange(startIso, endIso){
   const url = `https://api.nasa.gov/planetary/apod?api_key=${encodeURIComponent(site.nasaKey)}&start_date=${startIso}&end_date=${endIso}&thumbs=true`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("APOD fetch failed: " + res.status);
-  const data = await res.json();
-  return Array.isArray(data) ? data : [data];
+  // NASA's APOD endpoint frequently returns 5xx / hangs during morning windows.
+  // Retry a few times with backoff so a single transient blip doesn't deploy an empty site.
+  const attempts = 5;
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("APOD fetch failed: " + res.status);
+      const data = await res.json();
+      return Array.isArray(data) ? data : [data];
+    } catch (e) {
+      lastErr = e;
+      const wait = 2000 * (i + 1); // 2s, 4s, 6s, 8s, 10s
+      console.error(`APOD fetch attempt ${i+1}/${attempts} failed: ${e.message || e}. Retrying in ${wait}ms...`);
+      await new Promise(r => setTimeout(r, wait));
+    }
+  }
+  throw lastErr || new Error("APOD fetch failed after retries");
 }
 
 /* Video thumbnail helpers */
@@ -229,9 +243,23 @@ ${xml}
   try {
     apods = await fetchApodRange(iso(start), iso(now));
   } catch (e) {
+    // Hard fail on fetch error. Previously this was swallowed and the build
+    // happily deployed an empty site, taking the live archive down with it.
+    // ALLOW_MISSING_TODAY only covers "today not yet published", not
+    // "NASA is down and we got nothing".
     console.error("APOD fetch error:", e.message || e);
+    console.error("  Aborting build so we don't deploy an empty site over the live one.");
+    process.exit(1);
   }
   apods = (apods||[]).filter(x => x && x.date && (x.url || x.thumbnail_url));
+
+  // Defense in depth: if the fetch "succeeded" but produced zero usable
+  // entries (e.g. partial outage returning an empty array), still bail.
+  if (apods.length === 0) {
+    console.error("generate.mjs: APOD fetch returned zero usable entries.");
+    console.error("  Aborting build to preserve the existing live site.");
+    process.exit(1);
+  }
 
   // Fail loudly if today's APOD wasn't included. This was a silent failure mode
   // before: when the workflow ran too early, NASA hadn't posted yet, today's
